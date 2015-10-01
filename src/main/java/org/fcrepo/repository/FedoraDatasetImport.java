@@ -53,7 +53,7 @@ public class FedoraDatasetImport {
         final String password = System.getProperty("fcrepo.authPassword", args[3]);
 
         final HttpClient httpClient = HttpClientBuilder.create().setMaxConnPerRoute(MAX_VALUE)
-                .setMaxConnTotal(MAX_VALUE).build();
+            .setMaxConnTotal(MAX_VALUE).build();
 
         LOGGER.info("fcrepoUrl:" + fcrepoUrl);
         LOGGER.info("Dataset dir:" + new File(FedoraDatasetImport.class.getResource(dataDir).getFile()).getAbsolutePath());
