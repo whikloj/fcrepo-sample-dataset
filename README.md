@@ -15,6 +15,7 @@ To load your own dataset, convert it to jcr/xml format and place the data files 
 ## WebAC resources
 
 To load default WebAC protected resources.
+
 1. Download the fcrepo-sample-dataset tool: git clone git@github.com:futures/fcrepo-sample-dataset.git
 2. Change to the fcrepo-sample-dataset directory: cd fcrepo-sample-dataset
 3. Build: mvn clean install
