@@ -19,6 +19,7 @@ package org.fcrepo.repository;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -69,6 +70,8 @@ public class FileFinder extends SimpleFileVisitor<Path> {
             final String uriRef = root.relativize(file).toString().replaceAll("\\.ttl$", "");
             LOGGER.info("Creating {} from {}", uriRef, filename);
             putter.put(uriRef, new FileEntity(file.toFile()));
+        } else if (filename.endsWith(".txt") && !filename.startsWith(".")) {
+
         }
 
         return CONTINUE;
@@ -94,4 +97,17 @@ public class FileFinder extends SimpleFileVisitor<Path> {
         return CONTINUE;
     }
 
+    @Override
+    public FileVisitResult postVisitDirectory(final Path dir, final IOException e) {
+        final String uriRef = root.relativize(dir).toString();
+        LOGGER.info("Creating container " + uriRef);
+
+        final Path dirFile = Paths.get(dir.toString(), "_.ttl");
+        if (Files.exists(dirFile)) {
+            putter.put(uriRef, new FileEntity(dirFile.toFile()));
+        } else {
+            putter.put(uriRef, emptyEntity);
+        }
+        return CONTINUE;
+    }
 }

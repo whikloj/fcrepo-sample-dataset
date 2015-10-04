@@ -19,12 +19,14 @@ package org.fcrepo.repository;
 import static java.lang.Integer.MAX_VALUE;
 import static javax.ws.rs.core.Response.Status.CREATED;
 import static org.slf4j.LoggerFactory.getLogger;
+import static org.fcrepo.repository.FedoraDatasetImport.setAuth;
 
 import java.net.URI;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
@@ -44,13 +46,19 @@ public class ResourcePutter {
 
     private final URI baseUrl;
 
+    private final String username;
+
+    private final String password;
+
     /**
      * The base URI is given in baseUrl. It should end with a "/" for relative URI refs to resolve as expected.
      *
      * @param baseUrl
      */
-    public ResourcePutter(final URI baseUrl) {
+    public ResourcePutter(final URI baseUrl, final String username, final String password) {
         this.baseUrl = baseUrl;
+        this.username = username;
+        this.password = password;
     }
 
     /**
@@ -64,11 +72,35 @@ public class ResourcePutter {
     public boolean put(final String uriRef, final HttpEntity entity) {
         final URI requestURI = baseUrl.resolve(uriRef);
         final HttpPut put = new HttpPut(requestURI);
+        if (this.username != null && this.password != null) {
+            LOGGER.debug("Setting credentials to {} : {}", this.username, this.password);
+            setAuth(put, this.username, this.password);
+        }
         put.setEntity(entity);
         put.setHeader("Content-Type", "text/turtle");
-        HttpResponse res;
         try {
-            res = httpClient.execute(put);
+            final HttpResponse res = httpClient.execute(put);
+            LOGGER.debug("URL:" + requestURI);
+            LOGGER.debug("Response:" + res.toString());
+            return res.getStatusLine().getStatusCode() == CREATED.getStatusCode();
+        } catch (final Exception e) {
+            LOGGER.warn("Failed to PUT " + requestURI);
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean patch(final String uriRef, final HttpEntity entity) {
+        final URI requestURI = baseUrl.resolve(uriRef);
+        final HttpPatch request = new HttpPatch(requestURI);
+        if (this.username != null && this.password != null) {
+            LOGGER.debug("Setting credentials to {} : {}", this.username, this.password);
+            setAuth(request, this.username, this.password);
+        }
+        request.setEntity(entity);
+        request.setHeader("Content-Type", "application/sparql-update");
+        try {
+            final HttpResponse res = httpClient.execute(request);
             LOGGER.debug("URL:" + requestURI);
             LOGGER.debug("Response:" + res.toString());
             return res.getStatusLine().getStatusCode() == CREATED.getStatusCode();

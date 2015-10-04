@@ -152,8 +152,6 @@
           <arguments>
             <argument>http://localhost:8080/rest</argument>
             <argument>/data</argument>
-            <argument></argument>
-            <argument></argument>
           </arguments>
         </configuration>
       </plugin>

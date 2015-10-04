@@ -49,11 +49,11 @@ public class FedoraDatasetImport {
 
         final String fcrepoUrl = System.getProperty("fcrepo.url", args[0]);
         final String dataDir = System.getProperty("dataset.resource", args[1]);
-        final String username = System.getProperty("fcrepo.authUser", args[2]);
-        final String password = System.getProperty("fcrepo.authPassword", args[3]);
+        final String username = System.getProperty("fcrepo.authUser", null);
+        final String password = System.getProperty("fcrepo.authPassword", null);
 
         final HttpClient httpClient = HttpClientBuilder.create().setMaxConnPerRoute(MAX_VALUE)
-            .setMaxConnTotal(MAX_VALUE).build();
+                .setMaxConnTotal(MAX_VALUE).build();
 
         LOGGER.info("fcrepoUrl:" + fcrepoUrl);
         LOGGER.info("Dataset dir:" + new File(FedoraDatasetImport.class.getResource(dataDir).getFile()).getAbsolutePath());
@@ -68,16 +68,17 @@ public class FedoraDatasetImport {
 
         final File[] files = new File(FedoraDatasetImport.class.getResource(dataDir).getFile()).listFiles();
         for(int i=0; i<files.length; i++){
-
-            try {
-                final boolean successful = importData(httpClient, fcrepoUrl, files[i], username, password);
-                if (successful) {
-                    LOGGER.info("Imported data file: " + files[i].getAbsolutePath());
-                } else {
-                    LOGGER.info("Failed to imported data file: " + files[i].getAbsolutePath());
+            if (files[i].isFile()) {
+                try {
+                    final boolean successful = importData(httpClient, fcrepoUrl, files[i], username, password);
+                    if (successful) {
+                        LOGGER.info("Imported data file: " + files[i].getAbsolutePath());
+                    } else {
+                        LOGGER.info("Failed to imported data file: " + files[i].getAbsolutePath());
+                    }
+                } catch (final Exception e) {
+                    LOGGER.error("Error import file " + files[i].getPath(), e);
                 }
-            } catch (final Exception e) {
-                LOGGER.error("Error import file " + files[i].getPath(), e);
             }
         }
     }
@@ -140,7 +141,7 @@ public class FedoraDatasetImport {
         }
     }
 
-    private static void setAuth(final AbstractHttpMessage method, final String username, final String password) {
+    protected static void setAuth(final AbstractHttpMessage method, final String username, final String password) {
         final String creds = username + ":" + password;
         final String encCreds = new String(Base64.encodeBase64(creds.getBytes()));
         final String basic = "Basic " + encCreds;

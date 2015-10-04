@@ -20,17 +20,18 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import org.slf4j.Logger;
 
 /**
  * Tool to load a directory tree of Turtle RDF files into a repository.
  *
  * @author Peter Eichman
+ * @author whikloj
  * @since 2015-09-25
  */
 public class FedoraResourceImport {
@@ -45,21 +46,44 @@ public class FedoraResourceImport {
      */
     public static void main(final String[] args) {
 
-        final String fcrepoUrl = System.getProperty("fcrepo.url", "http://localhost:8080/rest/");
-        final String resourcesDir = System.getProperty("resources.dir", ".");
+        String fcrepoUrl = System.getProperty("fcrepo.url", "http://localhost:8080/fcrepo/rest/");
+        if (!fcrepoUrl.endsWith("/")) {
+            fcrepoUrl = fcrepoUrl + "/";
+        }
+        final String resourcesDir = System.getProperty("resources.dir", "./src/main/resources/data");
+        final String username = System.getProperty("fcrepo.authUser", null);
+        final String password = System.getProperty("fcrepo.authPassword", null);
 
         final File dir = new File(resourcesDir);
 
-        LOGGER.info("fcrepoUrl:" + fcrepoUrl);
-        LOGGER.info("resources dir:" + dir.getAbsolutePath());
+        LOGGER.debug("fcrepoUrl: " + fcrepoUrl);
+        LOGGER.debug("resources dir: " + dir.getAbsolutePath());
+        LOGGER.debug("fcrepo.authUser: " + username);
+        LOGGER.debug("fcrepo.authPassword: " + password);
 
+        // Load the resources to protect
+        final WebACProtectedResources resource = new WebACProtectedResources(fcrepoUrl, username, password);
+        try {
+            resource.loadResources();
+        } catch (final UnsupportedEncodingException e) {
+            LOGGER.error("Problem loading resource: {}", e.getMessage());
+        }
+
+        final ResourcePutter putter = new ResourcePutter(URI.create(fcrepoUrl), username, password);
         final Path filesRoot = Paths.get(resourcesDir);
-        final ResourcePutter putter = new ResourcePutter(URI.create(fcrepoUrl));
+
         final FileFinder finder = new FileFinder(filesRoot, putter);
         try {
             Files.walkFileTree(filesRoot, finder);
         } catch (final IOException e) {
             e.printStackTrace();
         }
+
+        try {
+            resource.linkResources();
+        } catch (final UnsupportedEncodingException e) {
+            LOGGER.error("Problem linking resource to Web ACL: {}", e.getMessage());
+        }
+
     }
 }

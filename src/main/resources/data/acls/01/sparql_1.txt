@@ -1,0 +1,3 @@
+PREFIX acl: <http://www.w3.org/ns/auth/acl#>
+INSERT INTO {
+<> acl:accessControl </fcrepo/rest/> . } WHERE {}
